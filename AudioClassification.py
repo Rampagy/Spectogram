@@ -1,24 +1,14 @@
-#  Copyright 2016 The TensorFlow Authors. All Rights Reserved.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
-"""Convolutional Neural Network Estimator for MNIST, built with tf.layers."""
+"""Convolutional Neural Network Estimator for Urban Audio, built with tf.layers."""
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import math
 import numpy as np
 import tensorflow as tf
+import ParseImages as pi
+import os
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
@@ -28,13 +18,13 @@ def cnn_model_fn(features, labels, mode):
   # Input Layer
   # Reshape X to 4-D tensor: [batch_size, width, height, channels]
   # MNIST images are 28x28 pixels, and have one color channel
-  input_layer = tf.reshape(features["x"], [-1, 28, 28, 1])
+  input_layer = tf.reshape(features["x"], [-1, 50, 50, 1])
 
   # Convolutional Layer #1
   # Computes 32 features using a 5x5 filter with ReLU activation.
   # Padding is added to preserve width and height.
-  # Input Tensor Shape: [batch_size, 28, 28, 1]
-  # Output Tensor Shape: [batch_size, 28, 28, 32]
+  # Input Tensor Shape: [batch_size, 50, 50, 1]
+  # Output Tensor Shape: [batch_size, 50, 50, 64]
   conv1 = tf.layers.conv2d(
       inputs=input_layer,
       filters=32,
@@ -44,15 +34,15 @@ def cnn_model_fn(features, labels, mode):
 
   # Pooling Layer #1
   # First max pooling layer with a 2x2 filter and stride of 2
-  # Input Tensor Shape: [batch_size, 28, 28, 32]
-  # Output Tensor Shape: [batch_size, 14, 14, 32]
+  # Input Tensor Shape: [batch_size, 50, 50, 32]
+  # Output Tensor Shape: [batch_size, 25, 25, 32]
   pool1 = tf.layers.max_pooling2d(inputs=conv1, pool_size=[2, 2], strides=2)
 
   # Convolutional Layer #2
   # Computes 64 features using a 5x5 filter.
   # Padding is added to preserve width and height.
-  # Input Tensor Shape: [batch_size, 14, 14, 32]
-  # Output Tensor Shape: [batch_size, 14, 14, 64]
+  # Input Tensor Shape: [batch_size, 25, 25, 32]
+  # Output Tensor Shape: [batch_size, 25, 25, 64]
   conv2 = tf.layers.conv2d(
       inputs=pool1,
       filters=64,
@@ -62,29 +52,29 @@ def cnn_model_fn(features, labels, mode):
 
   # Pooling Layer #2
   # Second max pooling layer with a 2x2 filter and stride of 2
-  # Input Tensor Shape: [batch_size, 14, 14, 64]
-  # Output Tensor Shape: [batch_size, 7, 7, 64]
+  # Input Tensor Shape: [batch_size, 25, 25, 64]
+  # Output Tensor Shape: [batch_size, 12, 12, 64]
   pool2 = tf.layers.max_pooling2d(inputs=conv2, pool_size=[2, 2], strides=2)
 
   # Flatten tensor into a batch of vectors
-  # Input Tensor Shape: [batch_size, 7, 7, 64]
-  # Output Tensor Shape: [batch_size, 7 * 7 * 64]
-  pool2_flat = tf.reshape(pool2, [-1, 7 * 7 * 64])
+  # Input Tensor Shape: [batch_size, 12, 12, 64]
+  # Output Tensor Shape: [batch_size, 12 * 12 * 64]
+  pool2_flat = tf.reshape(pool2, [-1, 12 * 12 * 64])
 
   # Dense Layer
   # Densely connected layer with 1024 neurons
-  # Input Tensor Shape: [batch_size, 7 * 7 * 64]
-  # Output Tensor Shape: [batch_size, 1024]
-  dense = tf.layers.dense(inputs=pool2_flat, units=1024, activation=tf.nn.relu)
+  # Input Tensor Shape: [batch_size, 12 * 12 * 64]
+  # Output Tensor Shape: [batch_size, 2048]
+  dense1 = tf.layers.dense(inputs=pool2_flat, units=2048, activation=tf.nn.relu)
 
   # Add dropout operation; 0.6 probability that element will be kept
-  dropout = tf.layers.dropout(
-      inputs=dense, rate=0.4, training=mode == tf.estimator.ModeKeys.TRAIN)
+  dropout1 = tf.layers.dropout(
+      inputs=dense1, rate=0.4, training=mode == tf.estimator.ModeKeys.TRAIN)
 
   # Logits layer
   # Input Tensor Shape: [batch_size, 1024]
   # Output Tensor Shape: [batch_size, 10]
-  logits = tf.layers.dense(inputs=dropout, units=10)
+  logits = tf.layers.dense(inputs=dropout2, units=10)
 
   predictions = {
       # Generate predictions (for PREDICT and EVAL mode)
@@ -118,19 +108,32 @@ def cnn_model_fn(features, labels, mode):
 
 
 def main(unused_argv):
-  """
-  # Load training and eval data
-  mnist = tf.contrib.learn.datasets.load_dataset("mnist")
-  train_data = mnist.train.images  # Returns np.array
-  train_labels = np.asarray(mnist.train.labels, dtype=np.int32)
-  eval_data = mnist.test.images  # Returns np.array
-  eval_labels = np.asarray(mnist.test.labels, dtype=np.int32)
-  """
+  image_data = pi.ReadImage()
+  # Init numpy array that's 50*50 long for the image
+  train_data = np.zeros(shape=(int(len(image_data)*0.85), 50*50), dtype=np.float32)
+  train_labels = np.zeros(shape=(int(len(image_data)*0.85)), dtype=np.float32)
+  eval_data = np.zeros(shape=(math.ceil(len(image_data)*0.15), 50*50), dtype=np.float32)
+  eval_labels = np.zeros(shape=(math.ceil(len(image_data)*0.15)), dtype=np.float32)
 
-  
+  train_count = 0
+  eval_count = 0
+  train_data_length = int(len(image_data)*0.85)
+
+  for name, data in image_data.items():
+      if train_count < train_data_length:
+          # add to the train data
+          train_data[train_count, :] = np.float32(data[0]) # picture
+          train_labels[train_count] = np.float32(data[1]) # label/truth
+          train_count += 1
+      else:
+          # add to the eval data
+          eval_data[eval_count, :] = np.float32(data[0]) # picture
+          eval_labels[eval_count] = np.float32(data[1]) # label/truth
+          eval_count += 1
+
   # Create the Estimator
-  mnist_classifier = tf.estimator.Estimator(
-      model_fn=cnn_model_fn, model_dir="/tmp/mnist_convnet_model")
+  urban_classifier = tf.estimator.Estimator(
+      model_fn=cnn_model_fn, model_dir=os.path.join(os.path.dirname(os.path.realpath(__file__)), "urban_sound_model"))
 
   # Set up logging for predictions
   # Log the values in the "Softmax" tensor with label "probabilities"
@@ -145,7 +148,7 @@ def main(unused_argv):
       batch_size=100,
       num_epochs=None,
       shuffle=True)
-  mnist_classifier.train(
+  urban_classifier.train(
       input_fn=train_input_fn,
       steps=20000,
       hooks=[logging_hook])
@@ -156,9 +159,8 @@ def main(unused_argv):
       y=eval_labels,
       num_epochs=1,
       shuffle=False)
-  eval_results = mnist_classifier.evaluate(input_fn=eval_input_fn)
+  eval_results = urban_classifier.evaluate(input_fn=eval_input_fn)
   print(eval_results)
-
 
 if __name__ == "__main__":
   tf.app.run()
