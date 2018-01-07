@@ -17,7 +17,8 @@ def cnn_model_fn(features, labels, mode):
   """Model function for CNN."""
   # Input Layer
   # Reshape X to 4-D tensor: [batch_size, width, height, channels]
-  # MNIST images are 28x28 pixels, and have one color channel
+  # MNIST images are 50x50 pixels, and have one color channel
+
   input_layer = tf.reshape(features["x"], [-1, 50, 50, 1])
 
   # Convolutional Layer #1
@@ -72,9 +73,9 @@ def cnn_model_fn(features, labels, mode):
       inputs=dense1, rate=0.4, training=mode == tf.estimator.ModeKeys.TRAIN)
 
   # Logits layer
-  # Input Tensor Shape: [batch_size, 1024]
+  # Input Tensor Shape: [batch_size, 2048]
   # Output Tensor Shape: [batch_size, 10]
-  logits = tf.layers.dense(inputs=dropout2, units=10)
+  logits = tf.layers.dense(inputs=dropout1, units=10)
 
   predictions = {
       # Generate predictions (for PREDICT and EVAL mode)
@@ -93,7 +94,7 @@ def cnn_model_fn(features, labels, mode):
 
   # Configure the Training Op (for TRAIN mode)
   if mode == tf.estimator.ModeKeys.TRAIN:
-    optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
+    optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
     train_op = optimizer.minimize(
         loss=loss,
         global_step=tf.train.get_global_step())
@@ -130,7 +131,7 @@ def main(unused_argv):
           eval_data[eval_count, :] = np.float32(data[0]) # picture
           eval_labels[eval_count] = np.float32(data[1]) # label/truth
           eval_count += 1
-
+  print(train_data.shape)
   # Create the Estimator
   urban_classifier = tf.estimator.Estimator(
       model_fn=cnn_model_fn, model_dir=os.path.join(os.path.dirname(os.path.realpath(__file__)), "urban_sound_model"))

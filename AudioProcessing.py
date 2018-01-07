@@ -12,10 +12,10 @@ def Picturize_Audio(sound_files_dir):
     ave_audio = np.zeros(shape=input_data[1].shape[0])
     if len(input_data[1].shape)>=2:
         ave_audio = np.mean(input_data[1], axis=1)
-        print('Mutliple Channels')
+        #print('Mutliple Channels')
     else: # it has one channel so don't average them
         ave_audio = input_data[1]
-        print('Single Channel')
+        #print('Single Channel')
 
     photo_max_freq = 2500  # Hz
     photo_max_res_freq = 50 # Hz/pixel
