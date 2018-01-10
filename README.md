@@ -6,7 +6,7 @@ The aim of this is to see I can classify urban sounds accurately.  I used the [U
 
 To create the Spectogram I performed an FFT on each wav file to produce a frequency intensity image (AKA spectogram).  The image frequencies included in the image are capped at 2500 Hz and have a resolution of 50 Hz.  This gives an image size of 50 pixels by 50 pixels with each x-axis pixel representing a 0.1 sec section in the song and each y-axis pixel representing a 50Hz segment in the frequency domain.
 
-![Spectogram Image](Images/6902-2-0-7.png)
+![Spectogram Image](Presentation/Spectogram.png)
 
 ## Classification model
 
