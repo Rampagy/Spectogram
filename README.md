@@ -11,3 +11,7 @@ To create the Spectogram I performed an FFT on each wav file to produce a freque
 ## Classification model
 
 To train the tensorflow model simply run [Audio Classification.py](AudioClassification.py).  Once trained it should achieve ~87%.  I probably didn't evaluate it properly so it might be a little off.  You can then use the [prediction script](PredictAudio.py) to have it classify 20 hand chosen wav files to see how it does.
+
+## Notes
+
+It is important to be aware that the library I used to read the wav files does not support 24-bit wav files, so before trying to use this it is recommended that all wav fiels are converted to 16-bit.
