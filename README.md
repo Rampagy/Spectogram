@@ -14,6 +14,10 @@ To train the tensorflow model simply run [Audio Classification.py](AudioClassifi
 
 ## Notes
 
-It is important to be aware that the library I used to read the wav files does not support 24-bit wav files, so before trying to use this it is recommended that all wav files are converted to 16-bit.
+It is important to be aware that the library I used to read the wav files does not support 24-bit wav files, so before trying to use this it is recommended that all wav files are converted to 16-bit. I used the below command to convert all the files to 16-bit.
+
+```bash
+"*.wav" -exec sh -c "ffmpeg -y -i {} tmp.wav; mv tmp.wav {}" \;
+```
 
 To use the scripts as written without any changes it is important that the audio is placed into a folder called "urban_audio" without any subfolder or additional files.
